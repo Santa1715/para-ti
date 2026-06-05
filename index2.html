@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Galaxia tuya 💖</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Patrick Hand', cursive;
+    }
+
+    canvas {
+      display: block;
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      touch-action: none;
+      cursor: grab;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    canvas:active { cursor: grabbing; }
+
+
+    /* ── Modal ─────────────────────────────────────── */
+    #modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(-45deg, #000000, #1a000f, #0d0005, #000000);
+      background-size: 400% 400%;
+      animation: fadeIn 1s ease, cosmicBg 15s ease infinite;
+      overflow: hidden;
+    }
+    #modal::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 150vmax; height: 150vmax;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle at center, rgba(232,162,168,0.12) 0%, transparent 60%);
+      animation: nebulaMove 30s linear infinite;
+      pointer-events: none;
+    }
+    #modal.out { animation: fadeOut 0.7s ease forwards; }
+
+    #enter-btn-wrap {
+      position: relative;
+      z-index: 10;
+      margin-bottom: 32px;
+      animation: floatUpDown 3s ease-in-out infinite;
+    }
+    #enter-btn-glow {
+      position: absolute;
+      inset: -22px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(232,162,168,0.28) 0%, transparent 70%);
+      animation: pulseGlow 2.2s ease-in-out infinite;
+    }
+    #enter-btn {
+      position: relative;
+      padding: 20px 52px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 100px;
+      background: rgba(232, 162, 168, 0.12);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #fff;
+      font-family: 'Patrick Hand', cursive;
+      font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 15px rgba(232, 162, 168, 0.2);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: heartbeat 2s ease-in-out infinite;
+    }
+    #enter-btn:hover {
+      background: rgba(232, 162, 168, 0.25);
+      border-color: rgba(255, 255, 255, 0.8);
+      transform: scale(1.1) translateY(-5px);
+      box-shadow: 0 15px 45px rgba(232, 162, 168, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    #modal-subtitle {
+      position: relative;
+      z-index: 10;
+      font-size: clamp(1.1rem, 2.5vw, 1.9rem);
+      color: #F6D1D5;
+      text-shadow: 0 0 14px rgba(232,162,168,0.75);
+      animation: breathe 2.5s ease-in-out infinite;
+      letter-spacing: 0.06em;
+    }
+
+
+    #modal-stars {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .modal-star {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(246,209,213,0.4);
+      box-shadow: 0 0 8px rgba(232,162,168,0.7);
+    }
+
+    /* ── Love Card ─────────────────────────────────── */
+    #card-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.82);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      animation: fadeIn 0.3s ease;
+    }
+    #card-overlay.hidden { display: none; }
+
+    #card {
+      width: min(88vw, 360px);
+      border-radius: 32px;
+      background: linear-gradient(160deg, #1e0014 0%, #120009 40%, #1a000f 70%, #220015 100%);
+      border: 1px solid rgba(232,162,168,0.35);
+      box-shadow:
+        0 0 0 1px rgba(246,209,213,0.08),
+        0 0 60px rgba(232,162,168,0.45),
+        0 0 120px rgba(217,127,136,0.25),
+        0 40px 80px rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0 28px 0;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #card.reveal { animation: cardReveal 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+    #card.hide   { animation: cardHide 0.4s ease forwards; }
+
+    .card-glow-top {
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; height: 220px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(232,162,168,0.22) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .card-spin {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0.6;
+    }
+    .card-spin-inner {
+      position: absolute; top: -60%; left: -60%; width: 220%; height: 220%;
+      background: conic-gradient(from 0deg, transparent 0deg, rgba(232,162,168,0.06) 45deg, transparent 90deg, rgba(246,209,213,0.04) 180deg, transparent 225deg);
+      animation: slowSpin 14s linear infinite;
+    }
+    .card-corner {
+      position: absolute; font-size: 1rem; z-index: 2;
+      filter: drop-shadow(0 0 6px rgba(232,162,168,0.9));
+    }
+
+    .card-header {
+      width: 100%; padding: 22px 24px 18px;
+      background: linear-gradient(180deg, rgba(232,162,168,0.18) 0%, transparent 100%);
+      border-bottom: 1px solid rgba(232,162,168,0.15);
+      position: relative; z-index: 1;
+    }
+    .card-para {
+      font-size: 0.75rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(246,209,213,0.55); margin-bottom: 6px;
+    }
+    .card-divrow {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .card-line {
+      flex: 1; height: 1px;
+    }
+    .card-line-l { background: linear-gradient(90deg, transparent, rgba(232,162,168,0.5)); }
+    .card-line-r { background: linear-gradient(90deg, rgba(232,162,168,0.5), transparent); }
+    .card-heart {
+      font-size: 1.7rem;
+      animation: heartbeat 1.8s ease-in-out infinite;
+      filter: drop-shadow(0 0 10px rgba(232,162,168,1));
+    }
+
+    .card-emoji {
+      font-size: clamp(3.5rem, 14vw, 5.5rem);
+      margin: 24px 0 4px;
+      animation: floatUpDown 2.8s ease-in-out infinite;
+      filter: drop-shadow(0 0 22px rgba(232,162,168,0.95));
+      position: relative; z-index: 1; line-height: 1;
+    }
+    .card-dots {
+      display: flex; gap: 7px; align-items: center;
+      margin: 14px 0; position: relative; z-index: 1;
+    }
+    .card-dot {
+      font-size: 0.85rem; color: rgba(246,209,213,0.6);
+    }
+    .card-sep { font-size: 0.9rem; color: rgba(246,209,213,0.6); }
+
+    .card-phrase-wrap {
+      position: relative; z-index: 1; padding: 0 28px; margin: 4px 0 20px;
+    }
+    #card-phrase {
+      font-family: 'Patrick Hand', cursive;
+      font-size: clamp(1.15rem, 4vw, 1.5rem);
+      color: #fff;
+      text-shadow: 0 0 18px rgba(232,162,168,0.7), 0 2px 12px rgba(0,0,0,0.8);
+      line-height: 1.7;
+      font-style: italic;
+    }
+
+    .card-divider {
+      width: 60%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(232,162,168,0.4), transparent);
+      margin: 0 0 18px; position: relative; z-index: 1;
+    }
+    .card-close-hint {
+      font-size: 0.78rem; color: rgba(246,209,213,0.38);
+      letter-spacing: 0.1em; position: relative; z-index: 1;
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    /* ── Keyframes ─────────────────────────────────── */
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      35%       { transform: scale(1.08); }
+      65%       { transform: scale(1.04); }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); opacity: 0.55; }
+      50%       { transform: scale(1.35); opacity: 0.95; }
+    }
+    @keyframes breathe {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50%       { opacity: 1; transform: scale(1.04); }
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.15; transform: scale(1); }
+      50%       { opacity: 1; transform: scale(1.8); }
+    }
+    @keyframes floatUpDown {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-11px); }
+    }
+    @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes cardReveal {
+      from { opacity: 0; transform: scale(0.72) translateY(32px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes cardHide {
+      from { opacity: 1; transform: scale(1); }
+      to   { opacity: 0; transform: scale(0.87); }
+    }
+    @keyframes slowSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    @keyframes cosmicBg {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes nebulaMove {
+      0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+      50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.1); }
+      100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Canvas Three.js -->
+  <canvas id="galaxy-canvas"></canvas>
+
+  <!-- Modal de entrada -->
+  <div id="modal">
+    <div id="modal-stars"></div>
+    <div id="enter-btn-wrap">
+      <div id="enter-btn-glow"></div>
+      <button id="enter-btn">Preciona aqui</button>
+    </div>
+    <p id="modal-subtitle">Toca para entrar</p>
+  </div>
+
+  <!-- Tarjeta de amor -->
+  <div id="card-overlay" class="hidden">
+    <div id="card">
+      <div class="card-glow-top"></div>
+      <div class="card-spin"><div class="card-spin-inner"></div></div>
+
+      <!-- Esquinas decorativas -->
+      <span class="card-corner" style="top:14px;left:16px;animation:twinkle 2s 0s ease-in-out infinite">🌻</span>
+      <span class="card-corner" style="top:14px;right:16px;animation:twinkle 2.5s 0.4s ease-in-out infinite">✨</span>
+      <span class="card-corner" style="bottom:56px;left:16px;animation:twinkle 3s 0.8s ease-in-out infinite">🌻</span>
+      <span class="card-corner" style="bottom:56px;right:16px;animation:twinkle 3.5s 1.2s ease-in-out infinite">✨</span>
+
+      <!-- Encabezado -->
+      <div class="card-header">
+        <p class="card-para">Princesa ✦</p>
+        <div class="card-divrow">
+          <div class="card-line card-line-l"></div>
+          <span class="card-heart">💖</span>
+          <div class="card-line card-line-r"></div>
+        </div>
+      </div>
+
+      <!-- Emoji grande -->
+      <div class="card-emoji">🌻</div>
+
+      <!-- Fila de corazoncitos -->
+      <div class="card-dots">
+        <span class="card-dot" style="animation:twinkle 2.5s 0s ease-in-out infinite">❤️</span>
+        <span class="card-sep">·</span>
+        <span class="card-dot" style="animation:twinkle 2.8s 0.2s ease-in-out infinite">💕</span>
+        <span class="card-sep">·</span>
+        <span class="card-dot" style="animation:twinkle 3.1s 0.4s ease-in-out infinite">❤️</span>
+      </div>
+
+      <!-- Frase -->
+      <div class="card-phrase-wrap">
+        <p id="card-phrase">"Admiro la forma en que haces bonito hasta los días simples."</p>
+      </div>
+
+      <!-- Separador -->
+      <div class="card-divider"></div>
+
+      <!-- Hint cierre -->
+      <p class="card-close-hint">toca para cerrar</p>
+    </div>
+  </div>
+  <!-- Audio -->
+  <audio id="bgm" src="./assets/musica.mp3" loop preload="auto"></audio>
+
+  <!-- ── Import map Three.js ──────────────────────────── -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass }     from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+    // ── Datos ───────────────────────────────────────────────
+    const PHRASES = [
+      "Te amo tanto",
+      "Eres mi todo",
+      "Mi corazón es tuyo",
+      "Te pienso siempre",
+      "Eres mi felicidad",
+      "Amor eterno",
+      "Contigo todo brilla",
+      "Mi vida eres tú",
+      "Te adoro",
+      "Eres lo mejor",
+      "Mi amor infinito",
+      "Siempre juntos",
+      "Tú eres mi paz",
+      "Te quiero mucho",
+      "Eternamente tuyo",
+      "Mi corazón late por ti",
+      "Eres mi razón",
+      "Sin ti no soy nada",
+      "Me enamoré de ti",
+      "Eres mi sueño real",
+    ];
+
+    const EMOJIS = ["🌻","❤️","🌻","💖","🌻","💕","🌻","💗","🌻","💓","🌻","❤️","🌻","💝"];
+
+    const LOVE_PHRASES = [
+      "Cada día que pasa me doy cuenta de lo afortunado que soy de tenerte.",
+      "Eres la persona más especial que ha llegado a mi vida y no te cambiaría por nada.",
+      "Tu amor me hace mejor persona cada día, gracias por estar siempre.",
+      "Gracias por amarme tal como soy, con mis defectos y todo. Te amo.",
+      "Contigo encontré lo que siempre había buscado: mi hogar y mi paz.",
+      "Cada vez que te miro me recuerdo lo afortunado que soy de llamarte mío.",
+      "Mi amor por ti no tiene principio ni fin, es eterno e infinito.",
+    ];
+
+    // ── Referencias DOM ─────────────────────────────────────
+    const canvas      = document.getElementById('galaxy-canvas');
+    const modal       = document.getElementById('modal');
+    const enterBtn    = document.getElementById('enter-btn');
+    const cardOverlay = document.getElementById('card-overlay');
+    const card        = document.getElementById('card');
+    const cardPhrase  = document.getElementById('card-phrase');
+    const bgm         = document.getElementById('bgm');
+    const modalStars  = document.getElementById('modal-stars');
+
+    // Estrellas decorativas del modal
+    for (let i = 0; i < 30; i++) {
+      const s = document.createElement('span');
+      const size = 2 + Math.random() * 3.5;
+      s.className = 'modal-star';
+      Object.assign(s.style, {
+        width: size + 'px', height: size + 'px',
+        left: Math.random() * 100 + '%',
+        top:  Math.random() * 100 + '%',
+        opacity: 0.25 + Math.random() * 0.55,
+        animation: `twinkle ${2 + Math.random() * 4}s ${Math.random() * 3}s ease-in-out infinite`,
+      });
+      modalStars.appendChild(s);
+    }
+
+    // ── Entrada al mundo ────────────────────────────────────
+    // Pon tu canción en:  assets/musica.mp3  (junto al HTML)
+    let cardIndex = 0;
+
+    enterBtn.addEventListener('click', () => {
+      bgm.play().catch(() => {});
+      modal.classList.add('out');
+      setTimeout(() => modal.remove(), 700);
+    });
+
+    // ── Cierre de tarjeta ───────────────────────────────────
+    cardOverlay.addEventListener('click', (e) => {
+      if (e.target === cardOverlay) {
+        card.className = 'hide';
+        setTimeout(() => { cardOverlay.classList.add('hidden'); card.className = ''; }, 400);
+      }
+    });
+
+    // ── Three.js ────────────────────────────────────────────
+    const scene    = new THREE.Scene();
+    const clock    = new THREE.Clock();
+    const raycaster = new THREE.Raycaster();
+    const mouse    = new THREE.Vector2();
+
+    const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+
+    // ── OrbitControls ───────────────────────────────────────
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.enableZoom = false;   // zoom propio abajo
+    controls.minDistance = 30;
+    controls.maxDistance = 250;
+
+    // Zoom suavizado
+    let targetDist = 0;
+    function setPos() {
+      const z = innerWidth < 768 ? 158 : 120;
+      camera.position.set(0, 35, z);
+      targetDist = camera.position.distanceTo(controls.target);
+    }
+    setPos();
+
+    const MIN_DIST = 30, MAX_DIST = 250;
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      targetDist = Math.max(MIN_DIST, Math.min(MAX_DIST, targetDist * (1 + e.deltaY * 0.0008)));
+    }, { passive: false });
+
+    let lastPinch = 0;
+    canvas.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (lastPinch > 0) targetDist = Math.max(MIN_DIST, Math.min(MAX_DIST, targetDist * (1 + (lastPinch - d) * 0.003)));
+        lastPinch = d;
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchend', (e) => { if (e.touches.length < 2) lastPinch = 0; });
+
+    // ── Post-procesado ──────────────────────────────────────
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 1.5, 0.4, 0.85);
+    bloom.threshold = 0.62; bloom.strength = 0.88; bloom.radius = 0.65;
+    composer.addPass(bloom);
+
+    // ── Luces ───────────────────────────────────────────────
+    scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+    const mainLight = new THREE.PointLight(0xe8a2a8, 3.5, 420);
+    scene.add(mainLight);
+
+    // ── Grupo principal (rotante) ───────────────────────────
+    const galaxyGroup = new THREE.Group();
+    scene.add(galaxyGroup);
+
+    // ── Agujero negro ───────────────────────────────────────
+    let sphereMat;
+    const extraUniforms = [];
+
+    {
+      sphereMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uTime:   { value: 0 },
+          uColor1: { value: new THREE.Color('#000000') },
+          uColor2: { value: new THREE.Color('#0a0005') },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          uniform vec3 uColor1, uColor2;
+          varying vec2 vUv;
+          float noise(vec2 st){ return fract(sin(dot(st,vec2(12.9898,78.233)))*43758.5453); }
+          void main(){
+            float n=noise(vUv*6.0+uTime*0.08);
+            float n2=noise(vUv*14.0-uTime*0.06);
+            gl_FragColor=vec4(mix(uColor1,uColor2,n*n2),1.0);
+          }
+        `,
+      });
+      scene.add(new THREE.Mesh(new THREE.SphereGeometry(12, 64, 64), sphereMat));
+
+      const ringGeo = new THREE.RingGeometry(18, 32, 256);
+      function makeRingMat() {
+        const m = new THREE.ShaderMaterial({
+          uniforms: {
+            uTime:        { value: 0 },
+            innerRadius:  { value: 18.0 },
+            outerRadius:  { value: 32.0 },
+            centerColor:  { value: new THREE.Color('#F6D1D5') },
+            midColor:     { value: new THREE.Color('#E8A2A8') },
+            edgeColor:    { value: new THREE.Color('#D97F88') },
+          },
+          vertexShader: `varying vec3 vPos; void main(){ vPos=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+          fragmentShader: `
+            uniform float uTime,innerRadius,outerRadius;
+            uniform vec3 centerColor,midColor,edgeColor;
+            varying vec3 vPos;
+            float noise(vec2 st){ return fract(sin(dot(st,vec2(12.9898,78.233)))*43758.5453); }
+            void main(){
+              float dist=length(vPos.xy);
+              float t=clamp((dist-innerRadius)/(outerRadius-innerRadius),0.0,1.0);
+              vec3 col=t<0.5?mix(centerColor,midColor,t*2.0):mix(midColor,edgeColor,(t-0.5)*2.0);
+              float glow=1.0-smoothstep(0.0,1.0,t);
+              float flicker=noise(vPos.xy*0.12+uTime*0.25)*0.2;
+              col+=col*glow*(0.55+flicker);
+              float alpha=(1.0-t*0.9)*(0.92+flicker*0.08);
+              gl_FragColor=vec4(col,alpha);
+            }
+          `,
+          side: THREE.DoubleSide,
+          transparent: true,
+        });
+        extraUniforms.push(m);
+        return m;
+      }
+
+      const r1 = new THREE.Mesh(ringGeo, makeRingMat());
+      r1.rotation.x = Math.PI / 2;
+      scene.add(r1);
+
+      const r2 = new THREE.Mesh(ringGeo, makeRingMat());
+      r2.rotation.x = Math.PI / 2 + 0.2;
+      r2.rotation.z = 0.28;
+      r2.scale.setScalar(0.88);
+      scene.add(r2);
+    }
+
+    // ── Estrellas de núcleo ─────────────────────────────────
+    {
+      const count = 22000;
+      const pos = new Float32Array(count * 3);
+      const col = new Float32Array(count * 3);
+      const c = new THREE.Color();
+      for (let i = 0; i < count; i++) {
+        const dist = 32 + Math.random() * 88;
+        const angle = Math.random() * Math.PI * 2;
+        const y = (Math.random() - 0.5) * 60 * Math.pow(1 - dist / 120, 1.5);
+        pos.set([Math.cos(angle)*dist, y, Math.sin(angle)*dist], i*3);
+        c.setHSL((0.82 + Math.random()*0.14) % 1, 0.7 + Math.random()*0.3, 0.55 + Math.random()*0.45);
+        col.set([c.r, c.g, c.b], i*3);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+      galaxyGroup.add(new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.26, blending: THREE.AdditiveBlending, vertexColors: true, transparent: true, opacity: 0.9 })));
+    }
+
+    // ── Halo esférico ───────────────────────────────────────
+    {
+      const count = 20000;
+      const pos = new Float32Array(count * 3);
+      const col = new Float32Array(count * 3);
+      const c = new THREE.Color();
+      let filled = 0;
+      while (filled < count) {
+        const rx=Math.random()*2-1, ry=Math.random()*2-1, rz=Math.random()*2-1;
+        if (rx*rx+ry*ry+rz*rz > 1) continue;
+        const x=rx*110, y=ry*55, z=rz*110;
+        const dist=Math.sqrt(x*x+y*y+z*z);
+        if (dist < 28) continue;
+        if (Math.random() > Math.pow(1.0-dist/110*0.7, 1.2)) continue;
+        pos.set([x, y, z], filled*3);
+        c.setHSL((0.82+Math.random()*0.14)%1, 0.55+Math.random()*0.45, 0.4+Math.random()*0.5);
+        col.set([c.r, c.g, c.b], filled*3);
+        filled++;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+      galaxyGroup.add(new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.18, blending: THREE.AdditiveBlending, vertexColors: true, transparent: true, opacity: 0.6 })));
+    }
+
+    // ── Estrellas de fondo ──────────────────────────────────
+    {
+      const count = 6000;
+      const pos = new Float32Array(count * 3);
+      const col = new Float32Array(count * 3);
+      const c = new THREE.Color();
+      for (let i = 0; i < count; i++) {
+        pos.set([(Math.random()-0.5)*1000, (Math.random()-0.5)*1000, (Math.random()-0.5)*1000], i*3);
+        const r = Math.random() > 0.6;
+        c.setHSL(r ? 0.86+Math.random()*0.1 : 0, 0, 0.7+Math.random()*0.3);
+        col.set([c.r, c.g, c.b], i*3);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+      scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.22, vertexColors: true, transparent: true, opacity: 0.55 })));
+    }
+
+    // ── Textos y emojis orbitales ───────────────────────────
+    const occupied = [];
+    const textMeshes  = [];
+    const emojiMeshes = [];
+
+    function setOrbitPos(obj, minR, maxR) {
+      for (let attempt = 0; attempt < 60; attempt++) {
+        const r = minR + Math.random() * (maxR - minR);
+        const theta = Math.random() * Math.PI * 2;
+        const y = (Math.random() - 0.5) * 18;
+        const x = r * Math.cos(theta), z = r * Math.sin(theta);
+        let ok = true;
+        for (const p of occupied) {
+          if (Math.sqrt((x-p.x)**2+(y-p.y)**2+(z-p.z)**2) < 20) { ok=false; break; }
+        }
+        if (ok) { obj.position.set(x, y, z); occupied.push({x, y, z}); return; }
+      }
+      const r = minR + Math.random()*(maxR-minR);
+      const t = Math.random()*Math.PI*2;
+      obj.position.set(r*Math.cos(t), (Math.random()-0.5)*18, r*Math.sin(t));
+    }
+
+    function makeTextTex(text, fill, shadow) {
+      const c = document.createElement('canvas');
+      c.width = 1536; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.font = 'bold 100px "Patrick Hand",cursive';
+      ctx.fillStyle = fill;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = shadow;
+      ctx.shadowBlur = 12;
+      ctx.fillText(text, c.width/2, c.height/2);
+      return new THREE.CanvasTexture(c);
+    }
+
+    function makeEmojiTex(emoji) {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.font = '300px "Segoe UI Emoji","Apple Color Emoji",sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#E8A2A8';
+      ctx.shadowBlur = 36;
+      ctx.fillText(emoji, c.width/2, c.height/2+16);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.generateMipmaps = false;
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      return tex;
+    }
+
+    const textColors = [
+      { fill: '#F6D1D5', shadow: '#E8A2A8' },
+      { fill: '#E8A2A8', shadow: '#D97F88' },
+      { fill: '#F2B9BF', shadow: '#D97F88' },
+    ];
+
+    for (let i = 0; i < 55; i++) {
+      const col = textColors[i % 3];
+      const mat = new THREE.MeshBasicMaterial({
+        map: makeTextTex(PHRASES[i % PHRASES.length], col.fill, col.shadow),
+        transparent: true, 
+        alphaTest: 0.4, 
+        depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(45, 15), mat);
+      setOrbitPos(mesh, 42, 118);
+      galaxyGroup.add(mesh);
+      textMeshes.push(mesh);
+    }
+
+    for (let i = 0; i < 65; i++) {
+      const mat = new THREE.MeshBasicMaterial({
+        map: makeEmojiTex(EMOJIS[i % EMOJIS.length]),
+        transparent: true, alphaTest: 0.05, depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(16, 16), mat);
+      setOrbitPos(mesh, 42, 118);
+      galaxyGroup.add(mesh);
+      emojiMeshes.push(mesh);
+    }
+
+    // ── Click en emojis → tarjeta ───────────────────────────
+    canvas.addEventListener('click', (e) => {
+      mouse.x =  (e.clientX / innerWidth)  * 2 - 1;
+      mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      if (raycaster.intersectObjects(emojiMeshes).length > 0) {
+        cardPhrase.textContent = `"${LOVE_PHRASES[cardIndex % LOVE_PHRASES.length]}"`;
+        cardIndex++;
+        card.className = '';
+        cardOverlay.classList.remove('hidden');
+        requestAnimationFrame(() => card.className = 'reveal');
+      }
+    });
+
+    // ── Estrellas fugaces ───────────────────────────────────
+    const shootingStars = [];
+
+    function spawnShootingStar() {
+      const hGeo = new THREE.BufferGeometry();
+      hGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0,0,0]), 3));
+      const head = new THREE.Points(hGeo, new THREE.PointsMaterial({ color: 0xffd0e0, size: 2.8, blending: THREE.AdditiveBlending, transparent: true, opacity: 1.0 }));
+      head.position.set(THREE.MathUtils.randFloatSpread(700), THREE.MathUtils.randFloat(80, 280), THREE.MathUtils.randFloatSpread(700));
+
+      const tGeo = new THREE.BufferGeometry();
+      tGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(16*3), 3));
+      const trail = new THREE.Points(tGeo, new THREE.PointsMaterial({ color: 0xf6d1d5, size: 1.4, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.5 }));
+
+      const vx = (Math.random()<0.5?-1:1)*(0.7+Math.random()*0.9);
+      const vy = -(0.35+Math.random()*0.45);
+      const vz = (Math.random()-0.5)*1.2;
+
+      scene.add(head); scene.add(trail);
+      shootingStars.push({ mesh: head, trail, velocity: new THREE.Vector3(vx,vy,vz), life: 0, history: [] });
+    }
+
+    // ── Resize ──────────────────────────────────────────────
+    window.addEventListener('resize', () => {
+      renderer.setSize(innerWidth, innerHeight);
+      composer.setSize(innerWidth, innerHeight);
+      camera.aspect = innerWidth / innerHeight;
+      setPos();
+      camera.updateProjectionMatrix();
+    });
+
+    // ── Loop de animación ───────────────────────────────────
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+
+      galaxyGroup.rotation.y = t * 0.09;
+      sphereMat.uniforms.uTime.value = t;
+      extraUniforms.forEach(m => { if (m.uniforms?.uTime) m.uniforms.uTime.value = t; });
+
+      textMeshes.forEach(m => m.lookAt(camera.position));
+      emojiMeshes.forEach(m => {
+        m.lookAt(camera.position);
+        m.scale.setScalar(1.0 + Math.sin(t*1.3 + m.position.x*0.04)*0.04);
+      });
+
+      if (Math.random() < 0.012) spawnShootingStar();
+
+      for (let i = shootingStars.length - 1; i >= 0; i--) {
+        const s = shootingStars[i];
+        s.life++;
+        s.mesh.position.add(s.velocity);
+        s.history.push(s.mesh.position.clone());
+        if (s.history.length > 16) s.history.shift();
+        const tArr = s.trail.geometry.attributes.position.array;
+        s.history.forEach((p, idx) => { tArr[idx*3]=p.x; tArr[idx*3+1]=p.y; tArr[idx*3+2]=p.z; });
+        s.trail.geometry.attributes.position.needsUpdate = true;
+        const fade = Math.max(0, 1 - s.life/230);
+        s.mesh.material.opacity  = fade;
+        s.trail.material.opacity = fade * 0.45;
+        if (s.life > 290) {
+          scene.remove(s.mesh); scene.remove(s.trail);
+          shootingStars.splice(i, 1);
+        }
+      }
+
+      // Zoom suavizado
+      const curDist = camera.position.distanceTo(controls.target);
+      if (Math.abs(curDist - targetDist) > 0.01) {
+        const lerped = curDist + (targetDist - curDist) * 0.08;
+        const dir = camera.position.clone().sub(controls.target).normalize();
+        camera.position.copy(controls.target).addScaledVector(dir, lerped);
+      }
+
+      controls.update();
+      composer.render();
+    }
+    animate();
+  </script>
+</body>
+</html>
